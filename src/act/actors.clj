@@ -22,7 +22,6 @@ Extend the actor with defhandle; send messages to it with
   (let [handler (new clojure.lang.MultiFn msecond :default)
         ag (agent (conj st {:handler handler}))]
     (send ag conj {:self ag})
-    (await ag)
     ag))
 
 (defmacro defhandle
@@ -30,3 +29,11 @@ Extend the actor with defhandle; send messages to it with
   [act msg arglst & body]
   (let [arglst2 (vec (concat [(first arglst) '_] (rest arglst)))]
     `(defmethod (:handler @~act) ~msg ~arglst2 ~@body)))
+
+(defmacro watch
+  "Wrapper for add-watcher, to send a message upon a change."
+  [ref act msg]
+  `(let [act# ~act]
+     (add-watcher ~ref :send-off act#
+                  (fn [actst# refst#]
+                    (! act# ~msg refst#)))))

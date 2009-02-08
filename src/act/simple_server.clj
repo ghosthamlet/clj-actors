@@ -9,13 +9,15 @@
     (loop [events (-> st :server selected)]
       (if-let [event (first events)]
         (cond (.isAcceptable event)
-              (do (arecur st :connected event)
+              (do (push-readable (:server st) event)
+                  (arecur st :connected event)
                   (recur (rest events)))
               (.isReadable event)
               (let [buf (ByteBuffer/allocate 0xFFF)
                     instr (socket-recv event buf)]
                 (if (zero? (count instr))
-                  (arecur st :dropped event)
+                  (do (pop-readable (:server st) event)
+                      (arecur st :dropped event))
                   (arecur st :received event instr))
                 (recur (rest events)))
               :else (throw (Exception. "neither acceptable nor readable")))
@@ -23,12 +25,10 @@
 
 (defn- default-connected [act]
   (defhandle act :connected [st #^SelectionKey sock]
-    (push-readable (:server st) sock)
     st))
     
 (defn- default-dropped [act]
   (defhandle act :dropped [st #^SelectionKey sock]
-    (pop-readable (:server st) sock)
     st))
 
 (defn create-simple-server
