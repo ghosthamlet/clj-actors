@@ -39,9 +39,6 @@ create the server as :server in a returned actor.  Defines a
   :connected [act #^Selectionkey sock]
   :received [act #^SelectionKey sock #^String instr]
   :dropped [act #^SelectionKey sock]
-
-By default, :connected calls act.networking/push-readable
-and :dropped calls act.networking/pop-readable
 "
   [server]
   (doto (actor {:server server})
