@@ -5,17 +5,30 @@
            (java.nio ByteBuffer)))
 
 (defn address
-    "Returns an InetAddress from [1 2 3 4] or \"1.2.3.4\""
-    [adr]
-    (let [v (if (string? adr)
-              (map #(Integer/decode %) (.split adr "[.]"))
-              adr)]
-      (InetAddress/getByAddress (into-array Byte/TYPE (map byte adr)))))
+  "Returns an InetAddress from [1 2 3 4] or \"1.2.3.4\",
+or an InetSocketAddress when also given a port."
+  ([adr]
+     (let [v (if (string? adr)
+               (map #(Integer/decode %) (.split adr "[.]"))
+               adr)]
+       (InetAddress/getByAddress (into-array Byte/TYPE (map byte adr)))))
+  ([adr port] (InetSocketAddress. (address adr) port)))
 
 (defn localhost
   "Returns the InetAddress of 127.0.0.1 rather than InetAddress/getLocalHost"
   []
   (address [127 0 0 1]))
+
+(defn connect
+  "Connect to an InetSocketAddress, optionally adding the new connection
+to a provided Selector."
+  ([#^InetSocketAddress addr]
+     (doto (SocketChannel/open)
+       (.configureBlocking false)
+       (.connect addr)))
+  ([#^InetSocketAddress addr sel]
+     (doto (connect addr)
+       (.register sel SelectionKey/OP_READ))))
 
 (defn create-server
   "Binds a server socket and sets it up for nonblocking operation,

@@ -1,13 +1,14 @@
 (ns act.actors)
 
-(defn !
-  "Send a message to an actor, with arguments."
-  [act msg & args]
+(defmulti !
+  "Send a message to an actor."
+  (fn [x & _] (class x)))
+(defmethod ! clojure.lang.Agent [act msg & args]
   (apply (:sender @act) act (:handler @act) msg args))
 
 (defn arecur [st msg & args]
   "Within an actor, send a message to itself given its state."
-  (apply (:sender st) (:self st) (:handler st) msg args)
+  (apply (:sender st) *agent* (:handler st) msg args)
   st)
 
 (defn- msecond [_ x & _] x)
@@ -16,7 +17,6 @@
 Returns an agent over this state and additional fields:
 
   :handler - refers to the MultiFn extended by defhandle
-  :self - refers to the agent itself.
   :sender - sending fn; if not set in 'st, defaulted to send-off
 
 Extend the actor with defhandle; send messages to it with
@@ -25,7 +25,6 @@ Extend the actor with defhandle; send messages to it with
   (let [handler (new clojure.lang.MultiFn msecond :default)
         st (if (:sender st) st (conj st {:sender send-off}))
         ag (agent (conj st {:handler handler}))]
-    (send ag conj {:self ag})
     ag))
 
 (defmacro defhandle
