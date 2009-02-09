@@ -8,6 +8,7 @@
             4000))
 
 (def echo-server (create-simple-server (create-server port)))
+(send echo-server assoc :sender send) ;; default is send-off
 
 (defhandle echo-server :received [st sock instr]
   (socket-send sock instr)
