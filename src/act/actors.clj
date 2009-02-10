@@ -22,7 +22,8 @@ Returns an agent over this state and additional fields:
 Extend the actor with defhandle; send messages to it with
 ! ;use arecur within a handler to loop."
   [#^PersistentArrayMap st]
-  (let [handler (new clojure.lang.MultiFn msecond :default)
+  (let [handler (new clojure.lang.MultiFn msecond
+                     :default #'clojure.core/global-hierarchy)
         st (if (:sender st) st (conj st {:sender send-off}))
         ag (agent (conj st {:handler handler}))]
     ag))
